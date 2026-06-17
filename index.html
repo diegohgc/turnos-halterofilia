@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Turnos VMix">
+<title>Turnos Halterofilia</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; color: #1a1a1a; max-width: 480px; margin: 0 auto; min-height: 100vh; }
+
+  .topbar { background: #0a1f44; color: #fff; padding: 0 16px; position: sticky; top: 0; z-index: 100; display: flex; align-items: center; gap: 12px; height: 64px; }
+  .topbar img { height: 64px; width: 64px; object-fit: contain; flex-shrink: 0; mix-blend-mode: lighten; }
+  .topbar h1 { font-size: 15px; font-weight: 600; letter-spacing: 0.3px; margin: 0; }
+  .topbar p { font-size: 11px; color: #aaa; margin: 2px 0 0; }
+
+  .nav { display: flex; background: #fff; border-bottom: 1px solid #e5e5e5; position: sticky; top: 64px; z-index: 99; }
+  .nav-btn { flex: 1; padding: 10px 4px 8px; font-size: 10px; text-align: center; cursor: pointer; color: #888; border: none; background: none; border-bottom: 2px solid transparent; }
+  .nav-btn .icon { display: block; font-size: 17px; margin-bottom: 2px; }
+  .nav-btn.active { color: #1a6ef5; border-bottom-color: #1a6ef5; }
+
+  .screen { display: none; padding: 16px; }
+  .screen.active { display: block; }
+
+  h2 { font-size: 17px; font-weight: 600; margin-bottom: 14px; }
+  .label { font-size: 13px; color: #666; margin-bottom: 5px; margin-top: 10px; }
+
+  input[type=text], input[type=number], input[type=date], select {
+    width: 100%; padding: 10px 12px; font-size: 15px;
+    border: 1px solid #ddd; border-radius: 10px;
+    background: #fff; color: #1a1a1a;
+    -webkit-appearance: none; appearance: none;
+  }
+  input:focus, select:focus { outline: none; border-color: #1a6ef5; box-shadow: 0 0 0 3px rgba(26,110,245,0.1); }
+
+  .btn { display: block; width: 100%; padding: 12px; font-size: 15px; font-weight: 500; border-radius: 10px; border: 1px solid #ddd; background: #fff; color: #1a1a1a; cursor: pointer; margin-top: 10px; text-align: center; -webkit-tap-highlight-color: transparent; }
+  .btn:active { opacity: 0.7; transform: scale(0.98); }
+  .btn-primary { background: #1a6ef5; color: #fff; border-color: #1a6ef5; }
+  .btn-danger { background: #fee2e2; color: #dc2626; border-color: #fca5a5; }
+  .btn-xs { width: auto; padding: 4px 10px; font-size: 12px; margin-top: 0; display: inline-block; border-radius: 20px; border: 1px solid #ddd; background: #fff; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .btn-xs:active { opacity: 0.7; }
+  .btn-done { background: #dcfce7; color: #15803d; border-color: #86efac; }
+  .btn-danger-xs { background: #fee2e2; color: #dc2626; border-color: #fca5a5; border-radius: 20px; padding: 4px 10px; font-size: 12px; display: inline-block; cursor: pointer; border: 1px solid; -webkit-tap-highlight-color: transparent; }
+
+  .card { background: #fff; border: 1px solid #e5e5e5; border-radius: 14px; padding: 14px 16px; margin-bottom: 12px; }
+  .badge { display: inline-block; font-size: 11px; font-weight: 500; padding: 3px 9px; border-radius: 20px; }
+  .badge-a { background: #dbeafe; color: #1d4ed8; }
+  .badge-b { background: #fef3c7; color: #92400e; }
+
+  .tanda-row { border-top: 1px solid #f0f0f0; padding: 10px 0 6px; }
+  .tanda-row.done { opacity: 0.5; }
+  .tanda-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .tanda-num { font-size: 13px; font-weight: 600; color: #444; }
+  .parte-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .parte-label { font-size: 12px; color: #888; width: 90px; flex-shrink: 0; }
+  .parte-sel { flex: 1; font-size: 13px; padding: 6px 8px; border: 1px solid #ddd; border-radius: 8px; background: #fff; color: #1a1a1a; -webkit-appearance: none; }
+
+  .worker-badge { display: inline-block; font-size: 12px; padding: 3px 10px; border-radius: 20px; font-weight: 500; }
+  .w0 { background: #dbeafe; color: #1e40af; }
+  .w1 { background: #dcfce7; color: #166534; }
+  .w2 { background: #fef3c7; color: #92400e; }
+  .wn { background: #f3f4f6; color: #6b7280; }
+
+  .resumen-bar { display: flex; gap: 8px; flex-wrap: wrap; padding: 10px 14px; background: #fff; border-radius: 12px; border: 1px solid #e5e5e5; margin-bottom: 14px; align-items: center; }
+  .add-tanda-btn { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; padding: 9px; margin-top: 10px; font-size: 13px; color: #1a6ef5; background: #eff6ff; border: 1px dashed #93c5fd; border-radius: 10px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+
+  /* Competiciones */
+  .comp-item { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f0f0f0; cursor: pointer; }
+  .comp-item:last-child { border-bottom: none; }
+  .comp-item-info { flex: 1; }
+  .comp-item-name { font-size: 15px; font-weight: 600; }
+  .comp-item-meta { font-size: 12px; color: #888; margin-top: 2px; }
+  .comp-arrow { color: #bbb; font-size: 18px; }
+  .comp-active-badge { font-size: 10px; background: #dbeafe; color: #1d4ed8; border-radius: 20px; padding: 2px 8px; margin-left: 8px; font-weight: 500; }
+
+  .jornada-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f0f0f0; cursor: pointer; }
+  .jornada-item:last-child { border-bottom: none; }
+  .jornada-item-name { font-size: 14px; font-weight: 500; }
+  .jornada-item-meta { font-size: 12px; color: #888; margin-top: 1px; }
+
+  .back-btn { display: flex; align-items: center; gap: 6px; font-size: 14px; color: #1a6ef5; cursor: pointer; margin-bottom: 14px; background: none; border: none; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
+  .stat { background: #fff; border-radius: 12px; border: 1px solid #e5e5e5; padding: 12px 8px; text-align: center; }
+  .stat-name { font-size: 11px; color: #888; margin-bottom: 4px; }
+  .stat-val { font-size: 22px; font-weight: 700; }
+  .stat-pct { font-size: 11px; color: #aaa; margin-top: 2px; }
+
+  .progress-bar { background: #e5e7eb; border-radius: 999px; height: 8px; overflow: hidden; margin-top: 6px; }
+  .progress-fill { background: #1a6ef5; height: 100%; border-radius: 999px; transition: width 0.3s; }
+
+  .section-title { font-size: 13px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin: 16px 0 8px; }
+  .ok-msg { font-size: 13px; color: #16a34a; margin-top: 8px; display: none; }
+  .empty-msg { color: #999; font-size: 14px; text-align: center; padding: 30px 20px; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 6px; }
+  .pill-active { background: #dbeafe; color: #1d4ed8; border: 1px solid #bfdbfe; border-radius: 20px; padding: 2px 10px; font-size: 12px; font-weight: 500; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <img src="data:image/png;base64,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" alt="VideoImagen">
+  <div>
+    <h1>Turnos VMix Halterofilia</h1>
+    <p id="topbar-sub">Gestión de turnos por tarima y tanda</p>
+  </div>
+</div>
+
+<div class="nav">
+  <button class="nav-btn active" onclick="goTo('config')"><span class="icon">⚙️</span>Config</button>
+  <button class="nav-btn" onclick="goTo('competiciones')"><span class="icon">🏆</span>Competiciones</button>
+  <button class="nav-btn" onclick="goTo('directo')"><span class="icon">🔴</span>Directo</button>
+  <button class="nav-btn" onclick="goTo('stats')"><span class="icon">📊</span>Stats</button>
+</div>
+
+<!-- CONFIG -->
+<div class="screen active" id="screen-config">
+  <h2>Compañeros</h2>
+  <div class="label">Compañero 1</div>
+  <input type="text" id="name0" placeholder="Nombre">
+  <div class="label">Compañero 2</div>
+  <input type="text" id="name1" placeholder="Nombre">
+  <div class="label">Compañero 3</div>
+  <input type="text" id="name2" placeholder="Nombre">
+  <button class="btn btn-primary" onclick="saveConfig()">Guardar nombres</button>
+  <p class="ok-msg" id="cfg-ok">✓ Nombres guardados</p>
+
+  <div class="section-title" style="margin-top:24px;">Copia de seguridad</div>
+  <div class="card" style="margin-top:0;">
+    <div style="font-size:13px;color:#666;margin-bottom:10px;">Exporta los datos para guardarlos o compartirlos. Importa para restaurarlos en cualquier dispositivo o navegador.</div>
+    <button class="btn" onclick="exportarDatos()" style="margin-top:0;">⬇ Exportar todos los datos</button>
+    <button class="btn" onclick="document.getElementById('import-file').click()" style="margin-top:8px;">⬆ Importar copia de seguridad</button>
+    <input type="file" id="import-file" accept=".json" style="display:none;" onchange="importarDatos(this)">
+    <p class="ok-msg" id="import-ok" style="margin-top:6px;">✓ Datos importados correctamente</p>
+    <p id="import-err" style="font-size:13px;color:#dc2626;margin-top:6px;display:none;">✕ Error al importar el archivo</p>
+  </div>
+</div>
+
+<!-- COMPETICIONES -->
+<div class="screen" id="screen-competiciones">
+  <div id="view-lista-comp">
+    <h2>Competiciones</h2>
+    <div id="lista-competiciones"></div>
+    <button class="btn btn-primary" onclick="showNuevaComp()">+ Nueva competición</button>
+  </div>
+
+  <div id="view-nueva-comp" style="display:none;">
+    <button class="back-btn" onclick="showListaComp()">← Volver</button>
+    <h2>Nueva competición</h2>
+    <div class="label">Nombre de la competición</div>
+    <input type="text" id="comp-nombre" placeholder="Ej: Copa de España 2025">
+    <div class="label">Ciudad</div>
+    <input type="text" id="comp-ciudad" placeholder="Ej: Madrid">
+    <button class="btn btn-primary" onclick="crearComp()">Crear competición</button>
+  </div>
+
+  <div id="view-detalle-comp" style="display:none;">
+    <button class="back-btn" onclick="showListaComp()">← Todas las competiciones</button>
+    <div id="detalle-comp-header"></div>
+    <div class="section-title">Jornadas</div>
+    <div id="lista-jornadas"></div>
+    <button class="btn btn-primary" onclick="showNuevaJornada()">+ Nueva jornada</button>
+    <button class="btn btn-danger" onclick="eliminarComp()" style="margin-top:6px;">Eliminar competición</button>
+  </div>
+
+  <div id="view-nueva-jornada" style="display:none;">
+    <button class="back-btn" onclick="showDetalleComp()">← Volver</button>
+    <h2>Nueva jornada</h2>
+    <div class="label">Fecha</div>
+    <input type="date" id="jornada-fecha">
+    <div class="two-col" style="margin-top:12px;">
+      <div>
+        <div class="label">Tandas en A</div>
+        <input type="number" id="tandas-a" min="0" value="3">
+      </div>
+      <div>
+        <div class="label">Tandas en B</div>
+        <input type="number" id="tandas-b" min="0" value="3">
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="crearJornada()" style="margin-top:16px;">Crear jornada</button>
+  </div>
+
+  <div id="view-historial-jornada" style="display:none;">
+    <button class="back-btn" onclick="showDetalleComp()">← Volver a la competición</button>
+    <div id="historial-jornada-content"></div>
+  </div>
+</div>
+
+<!-- DIRECTO -->
+<div class="screen" id="screen-directo">
+  <div id="directo-empty" class="empty-msg">Crea una competición y una jornada primero.</div>
+  <div id="directo-content" style="display:none;">
+    <div class="resumen-bar" id="resumen-bar"></div>
+    <div id="directo-tarimas"></div>
+  </div>
+</div>
+
+<!-- STATS -->
+<div class="screen" id="screen-stats">
+  <div id="stats-empty" class="empty-msg">No hay jornada activa.</div>
+  <div id="stats-content" style="display:none;">
+    <div id="stats-jornada-label" style="font-size:13px;color:#888;margin-bottom:12px;"></div>
+    <div class="stats-grid" id="stats-grid"></div>
+    <div id="stats-progress"></div>
+  </div>
+</div>
+
+<script>
+// ---- ESTADO ----
+var cfg = { names: ['','',''] };
+var db = { competiciones: [] }; // { id, nombre, ciudad, jornadas: [{id, fecha, tandas:{A:[],B:[]}}] }
+var activeCompId = null;
+var activeJornadaId = null;
+var currentCompId = null; // para navegación en competiciones
+
+// ---- CARGA ----
+(function(){
+  try { var c = localStorage.getItem('hl_cfg'); if(c) cfg = JSON.parse(c); } catch(e){}
+  try { var d = localStorage.getItem('hl_db'); if(d) db = JSON.parse(d); } catch(e){}
+  try { var a = localStorage.getItem('hl_active'); if(a){ var aa=JSON.parse(a); activeCompId=aa.compId; activeJornadaId=aa.jornadaId; } } catch(e){}
+  document.getElementById('name0').value = cfg.names[0];
+  document.getElementById('name1').value = cfg.names[1];
+  document.getElementById('name2').value = cfg.names[2];
+  // fecha por defecto hoy
+  document.getElementById('jornada-fecha').value = new Date().toISOString().slice(0,10);
+  updateTopbarSub();
+})();
+
+function saveDb(){ try{ localStorage.setItem('hl_db', JSON.stringify(db)); }catch(e){} }
+function saveActive(){ try{ localStorage.setItem('hl_active', JSON.stringify({compId:activeCompId,jornadaId:activeJornadaId})); }catch(e){} }
+
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,5); }
+
+function getComp(id){ return db.competiciones.find(function(c){ return c.id===id; }); }
+function getJornada(comp, id){ return comp ? comp.jornadas.find(function(j){ return j.id===id; }) : null; }
+function getActiveJornada(){ return getJornada(getComp(activeCompId), activeJornadaId); }
+
+function updateTopbarSub(){
+  var sub = 'Gestión de turnos por tarima y tanda';
+  var comp = getComp(activeCompId);
+  if(comp){
+    var j = getJornada(comp, activeJornadaId);
+    sub = comp.nombre + ' · 📍' + comp.ciudad + (j ? ' · ' + formatFecha(j.fecha) : '');
+  }
+  document.getElementById('topbar-sub').textContent = sub;
+}
+
+function formatFecha(f){
+  if(!f) return '';
+  var p = f.split('-');
+  return p[2]+'/'+p[1]+'/'+p[0];
+}
+
+// ---- NAVEGACIÓN ----
+function goTo(s){
+  document.querySelectorAll('.screen').forEach(function(el){ el.classList.remove('active'); });
+  document.querySelectorAll('.nav-btn').forEach(function(el){ el.classList.remove('active'); });
+  document.getElementById('screen-'+s).classList.add('active');
+  var idx = ['config','competiciones','directo','stats'].indexOf(s);
+  document.querySelectorAll('.nav-btn')[idx].classList.add('active');
+  if(s==='competiciones') showListaComp();
+  if(s==='directo') renderDirecto();
+  if(s==='stats') renderStats();
+}
+
+// ---- CONFIG ----
+function saveConfig(){
+  cfg.names[0] = document.getElementById('name0').value.trim() || 'Comp. 1';
+  cfg.names[1] = document.getElementById('name1').value.trim() || 'Comp. 2';
+  cfg.names[2] = document.getElementById('name2').value.trim() || 'Comp. 3';
+  try{ localStorage.setItem('hl_cfg', JSON.stringify(cfg)); }catch(e){}
+  var ok = document.getElementById('cfg-ok');
+  ok.style.display='block';
+  setTimeout(function(){ ok.style.display='none'; },2500);
+  renderDirecto();
+}
+
+// ---- COMPETICIONES ----
+function showListaComp(){
+  document.getElementById('view-lista-comp').style.display='block';
+  document.getElementById('view-nueva-comp').style.display='none';
+  document.getElementById('view-detalle-comp').style.display='none';
+  document.getElementById('view-nueva-jornada').style.display='none';
+  document.getElementById('view-historial-jornada').style.display='none';
+  renderListaComp();
+}
+
+function renderListaComp(){
+  var el = document.getElementById('lista-competiciones');
+  if(!db.competiciones.length){
+    el.innerHTML = '<div class="empty-msg" style="padding:20px 0;">No hay competiciones aún.</div>';
+    return;
+  }
+  var html = '<div class="card">';
+  db.competiciones.forEach(function(comp){
+    var isActive = comp.id === activeCompId;
+    html += '<div class="comp-item" onclick="showDetalleCompById(\''+comp.id+'\')">';
+    html += '<div class="comp-item-info">';
+    html += '<div class="comp-item-name">'+comp.nombre+(isActive?'<span class="comp-active-badge">Activa</span>':'')+'</div>';
+    html += '<div class="comp-item-meta">📍 '+comp.ciudad+' · '+comp.jornadas.length+' jornada'+(comp.jornadas.length!==1?'s':'')+'</div>';
+    html += '</div><span class="comp-arrow">›</span></div>';
+  });
+  html += '</div>';
+  el.innerHTML = html;
+}
+
+function showNuevaComp(){
+  document.getElementById('view-lista-comp').style.display='none';
+  document.getElementById('view-nueva-comp').style.display='block';
+  document.getElementById('comp-nombre').value='';
+  document.getElementById('comp-ciudad').value='';
+}
+
+function crearComp(){
+  var nombre = document.getElementById('comp-nombre').value.trim();
+  var ciudad = document.getElementById('comp-ciudad').value.trim();
+  if(!nombre || !ciudad){ alert('Rellena el nombre y la ciudad.'); return; }
+  var comp = { id: uid(), nombre: nombre, ciudad: ciudad, jornadas: [] };
+  db.competiciones.push(comp);
+  saveDb();
+  showDetalleCompById(comp.id);
+}
+
+function showDetalleCompById(id){
+  currentCompId = id;
+  document.getElementById('view-lista-comp').style.display='none';
+  document.getElementById('view-nueva-comp').style.display='none';
+  document.getElementById('view-detalle-comp').style.display='block';
+  document.getElementById('view-nueva-jornada').style.display='none';
+  document.getElementById('view-historial-jornada').style.display='none';
+  showDetalleComp();
+}
+
+function showDetalleComp(){
+  document.getElementById('view-lista-comp').style.display='none';
+  document.getElementById('view-nueva-comp').style.display='none';
+  document.getElementById('view-detalle-comp').style.display='block';
+  document.getElementById('view-nueva-jornada').style.display='none';
+  document.getElementById('view-historial-jornada').style.display='none';
+  var comp = getComp(currentCompId);
+  if(!comp) return;
+  var isActive = comp.id === activeCompId;
+  var html = '<div style="margin-bottom:12px;">';
+  html += '<div style="font-size:18px;font-weight:700;">'+comp.nombre+'</div>';
+  html += '<div style="font-size:13px;color:#888;margin-top:3px;">📍 '+comp.ciudad+'</div>';
+  if(!isActive){
+    html += '<button class="btn btn-primary" onclick="activarComp(\''+comp.id+'\')" style="margin-top:10px;">Activar esta competición</button>';
+  } else {
+    html += '<div style="margin-top:8px;"><span class="pill-active">✓ Competición activa</span></div>';
+  }
+  html += '</div>';
+  document.getElementById('detalle-comp-header').innerHTML = html;
+
+  var jel = document.getElementById('lista-jornadas');
+  if(!comp.jornadas.length){
+    jel.innerHTML = '<div style="color:#999;font-size:13px;padding:8px 0;">No hay jornadas todavía.</div>';
+    return;
+  }
+  var jhtml = '<div class="card">';
+  comp.jornadas.forEach(function(j){
+    var isActJ = isActive && j.id === activeJornadaId;
+    var counts = calcCounts(j);
+    var total = j.tandas.A.length + j.tandas.B.length;
+    var hecho = counts[0]+counts[1]+counts[2];
+    jhtml += '<div class="jornada-item">';
+    jhtml += '<div style="flex:1;" onclick="verHistorialJornada(\''+j.id+'\')">';
+    jhtml += '<div class="jornada-item-name">'+formatFecha(j.fecha)+(isActJ?'<span class="comp-active-badge">Activa</span>':'')+'</div>';
+    jhtml += '<div class="jornada-item-meta">'+total+' tandas · '+hecho.toFixed(1)+' completadas</div>';
+    jhtml += '</div>';
+    var actions = '';
+    if(!isActJ){
+      actions += '<button class="btn-xs" onclick="activarJornada(\''+j.id+'\');event.stopPropagation();" style="margin-right:4px;">Activar</button>';
+    }
+    actions += '<span class="btn-danger-xs" onclick="eliminarJornada(\''+j.id+'\');event.stopPropagation();">✕</span>';
+    jhtml += '<div style="display:flex;align-items:center;gap:4px;">'+actions+'</div>';
+    jhtml += '</div>';
+  });
+  jhtml += '</div>';
+  jel.innerHTML = jhtml;
+}
+
+function activarComp(id){
+  activeCompId = id;
+  activeJornadaId = null;
+  saveActive();
+  updateTopbarSub();
+  showDetalleComp();
+}
+
+function activarJornada(jid){
+  activeJornadaId = jid;
+  saveActive();
+  updateTopbarSub();
+  showDetalleComp();
+}
+
+function eliminarComp(){
+  var comp = getComp(currentCompId);
+  if(!comp) return;
+  if(!confirm('¿Eliminar la competición "'+comp.nombre+'" y todas sus jornadas?')) return;
+  db.competiciones = db.competiciones.filter(function(c){ return c.id!==currentCompId; });
+  if(activeCompId===currentCompId){ activeCompId=null; activeJornadaId=null; saveActive(); }
+  saveDb();
+  showListaComp();
+}
+
+function eliminarJornada(jid){
+  var comp = getComp(currentCompId);
+  if(!comp) return;
+  if(!confirm('¿Eliminar esta jornada?')) return;
+  comp.jornadas = comp.jornadas.filter(function(j){ return j.id!==jid; });
+  if(activeJornadaId===jid){ activeJornadaId=null; saveActive(); updateTopbarSub(); }
+  saveDb();
+  showDetalleComp();
+}
+
+// ---- NUEVA JORNADA ----
+function showNuevaJornada(){
+  document.getElementById('view-detalle-comp').style.display='none';
+  document.getElementById('view-nueva-jornada').style.display='block';
+  document.getElementById('jornada-fecha').value = new Date().toISOString().slice(0,10);
+}
+
+function makeTandas(n){
+  var arr=[];
+  for(var i=0;i<n;i++){
+    arr.push({ num:i+1, arrancada:null, dosTiempos:null, arrancadaDone:false, dosTiemposDone:false, workers:[0,1,2] });
+  }
+  return arr;
+}
+
+function crearJornada(){
+  var comp = getComp(currentCompId);
+  if(!comp) return;
+  var fecha = document.getElementById('jornada-fecha').value;
+  var nA = parseInt(document.getElementById('tandas-a').value)||0;
+  var nB = parseInt(document.getElementById('tandas-b').value)||0;
+  var j = { id: uid(), fecha: fecha, tandas: { A: makeTandas(nA), B: makeTandas(nB) } };
+  comp.jornadas.push(j);
+  // activar automáticamente
+  activeCompId = comp.id;
+  activeJornadaId = j.id;
+  saveDb();
+  saveActive();
+  updateTopbarSub();
+  showDetalleComp();
+}
+
+// ---- HISTORIAL JORNADA ----
+function verHistorialJornada(jid){
+  document.getElementById('view-detalle-comp').style.display='none';
+  document.getElementById('view-historial-jornada').style.display='block';
+  var comp = getComp(currentCompId);
+  var j = getJornada(comp, jid);
+  if(!j) return;
+  var counts = calcCounts(j);
+  var totalTandas = j.tandas.A.length + j.tandas.B.length;
+  var totalHecho = counts[0]+counts[1]+counts[2];
+  var progPct = totalTandas > 0 ? (totalHecho/totalTandas*100) : 0;
+
+  var html = '<h2>'+formatFecha(j.fecha)+'</h2>';
+  html += '<div style="font-size:13px;color:#888;margin-bottom:14px;">'+comp.nombre+' · '+comp.ciudad+'</div>';
+
+  html += '<div class="stats-grid">';
+  cfg.names.forEach(function(n,i){
+    var pct = totalTandas>0?(counts[i]/totalTandas*100):0;
+    var col = i===0?'#1e40af':i===1?'#166534':'#92400e';
+    html += '<div class="stat">';
+    html += '<div class="stat-name"><span class="worker-badge w'+i+'">'+(n||'P'+(i+1))+'</span></div>';
+    html += '<div class="stat-val" style="color:'+col+'">'+counts[i].toFixed(1)+'</div>';
+    html += '<div class="stat-pct">'+pct.toFixed(0)+'%</div>';
+    html += '</div>';
+  });
+  html += '</div>';
+
+  html += '<div class="card" style="margin-bottom:12px;">';
+  html += '<div style="font-size:12px;color:#888;margin-bottom:6px;">Progreso: '+totalHecho.toFixed(1)+' / '+totalTandas+' tandas</div>';
+  html += '<div class="progress-bar"><div class="progress-fill" style="width:'+progPct.toFixed(0)+'%"></div></div>';
+  html += '</div>';
+
+  // detalle por tarima
+  ['A','B'].forEach(function(t){
+    var tandas = j.tandas[t];
+    if(!tandas.length) return;
+    html += '<div class="card">';
+    html += '<div style="font-weight:600;margin-bottom:8px;">Tarima '+t+' <span class="badge badge-'+t.toLowerCase()+'">'+tandas.length+' tandas</span></div>';
+    tandas.forEach(function(ta){
+      html += '<div class="tanda-row '+(ta.arrancadaDone&&ta.dosTiemposDone?'done':'')+'">';
+      html += '<div class="tanda-num" style="margin-bottom:6px;">Tanda '+ta.num+'</div>';
+      html += '<div class="parte-row"><span class="parte-label">Arrancada</span>';
+      html += '<span class="worker-badge '+(ta.arrancada!==null?'w'+ta.arrancada:'wn')+'">'+(ta.arrancada!==null?cfg.names[ta.arrancada]:'—')+'</span>';
+      html += (ta.arrancadaDone?' <span style="font-size:11px;color:#16a34a;">✓</span>':'');
+      html += '</div>';
+      html += '<div class="parte-row"><span class="parte-label">Dos tiempos</span>';
+      html += '<span class="worker-badge '+(ta.dosTiempos!==null?'w'+ta.dosTiempos:'wn')+'">'+(ta.dosTiempos!==null?cfg.names[ta.dosTiempos]:'—')+'</span>';
+      html += (ta.dosTiemposDone?' <span style="font-size:11px;color:#16a34a;">✓</span>':'');
+      html += '</div></div>';
+    });
+    html += '</div>';
+  });
+
+  document.getElementById('historial-jornada-content').innerHTML = html;
+}
+
+// ---- DIRECTO ----
+function workerName(idx){ return idx===null?'—':(cfg.names[idx]||'P'+(idx+1)); }
+function workerClass(idx){ return idx===null?'wn':'w'+idx; }
+
+function workerSel(workers, selected, tarima, tandaIdx, parte){
+  var html='<select class="parte-sel" onchange="assignWorker(\''+tarima+'\','+tandaIdx+',\''+parte+'\',this.value)">';
+  html+='<option value="-1"'+(selected===null?' selected':'')+'>— sin asignar —</option>';
+  workers.forEach(function(w){
+    html+='<option value="'+w+'"'+(selected===w?' selected':'')+'>'+workerName(w)+'</option>';
+  });
+  return html+'</select>';
+}
+
+function assignWorker(tarima, tandaIdx, parte, val){
+  var j = getActiveJornada(); if(!j) return;
+  j.tandas[tarima][tandaIdx][parte] = parseInt(val)===-1?null:parseInt(val);
+  saveDb();
+  updateResumen();
+}
+
+function toggleParte(tarima, tandaIdx, parte){
+  var j = getActiveJornada(); if(!j) return;
+  var ta = j.tandas[tarima][tandaIdx];
+  ta[parte+'Done'] = !ta[parte+'Done'];
+  saveDb();
+  renderDirecto();
+  if(document.getElementById('screen-stats').classList.contains('active')) renderStats();
+}
+
+function addTanda(tarima){
+  var j = getActiveJornada(); if(!j) return;
+  j.tandas[tarima].push({ num:j.tandas[tarima].length+1, arrancada:null, dosTiempos:null, arrancadaDone:false, dosTiemposDone:false, workers:[0,1,2] });
+  saveDb();
+  renderDirecto();
+}
+
+function removeTanda(tarima, idx){
+  var j = getActiveJornada(); if(!j) return;
+  j.tandas[tarima].splice(idx,1);
+  j.tandas[tarima].forEach(function(t,i){ t.num=i+1; });
+  saveDb();
+  renderDirecto();
+}
+
+function calcCounts(j){
+  var counts=[0,0,0];
+  if(!j) return counts;
+  ['A','B'].forEach(function(t){
+    j.tandas[t].forEach(function(ta){
+      if(ta.arrancadaDone&&ta.arrancada!==null) counts[ta.arrancada]+=0.5;
+      if(ta.dosTiemposDone&&ta.dosTiempos!==null) counts[ta.dosTiempos]+=0.5;
+    });
+  });
+  return counts;
+}
+
+function updateResumen(){
+  var j = getActiveJornada();
+  var counts = calcCounts(j);
+  var html='<span style="font-size:12px;color:#888;margin-right:4px;">Hoy:</span>';
+  cfg.names.forEach(function(n,i){
+    html+='<span class="worker-badge w'+i+'" style="font-size:12px;">'+(n||'P'+(i+1))+': <strong>'+counts[i].toFixed(1)+'</strong></span> ';
+  });
+  var el=document.getElementById('resumen-bar');
+  if(el) el.innerHTML=html;
+}
+
+function renderDirecto(){
+  var j = getActiveJornada();
+  if(!j){
+    document.getElementById('directo-empty').style.display='block';
+    document.getElementById('directo-content').style.display='none';
+    return;
+  }
+  document.getElementById('directo-empty').style.display='none';
+  document.getElementById('directo-content').style.display='block';
+
+  var html='';
+  ['A','B'].forEach(function(t){
+    var tandas=j.tandas[t];
+    var done=tandas.filter(function(x){ return x.arrancadaDone&&x.dosTiemposDone; }).length;
+    html+='<div class="card">';
+    html+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">';
+    html+='<span style="font-size:16px;font-weight:600;">Tarima '+t+'</span>';
+    html+='<span class="badge badge-'+t.toLowerCase()+'">'+done+' / '+tandas.length+'</span>';
+    html+='</div>';
+
+    tandas.forEach(function(ta,i){
+      var ambasDone=ta.arrancadaDone&&ta.dosTiemposDone;
+      html+='<div class="tanda-row'+(ambasDone?' done':'')+'">';
+      html+='<div class="tanda-top">';
+      html+='<span class="tanda-num">Tanda '+ta.num+(ambasDone?' ✓':'')+'</span>';
+      html+='<span class="btn-danger-xs" onclick="removeTanda(\''+t+'\','+i+')">✕</span>';
+      html+='</div>';
+
+      html+='<div class="parte-row"><span class="parte-label">Arrancada</span>';
+      if(ta.arrancadaDone){
+        html+='<span class="worker-badge '+workerClass(ta.arrancada)+'">'+workerName(ta.arrancada)+'</span>';
+        html+=' <button class="btn-xs btn-done" onclick="toggleParte(\''+t+'\','+i+',\'arrancada\')">✓ Deshacer</button>';
+      } else {
+        html+=workerSel(ta.workers,ta.arrancada,t,i,'arrancada');
+        html+='<button onclick="toggleParte(\''+t+'\','+i+',\'arrancada\')" style="flex-shrink:0;background:#16a34a;color:#fff;border:none;border-radius:20px;padding:5px 10px;font-size:12px;cursor:pointer;">✓</button>';
+      }
+      html+='</div>';
+
+      html+='<div class="parte-row"><span class="parte-label">Dos tiempos</span>';
+      if(ta.dosTiemposDone){
+        html+='<span class="worker-badge '+workerClass(ta.dosTiempos)+'">'+workerName(ta.dosTiempos)+'</span>';
+        html+=' <button class="btn-xs btn-done" onclick="toggleParte(\''+t+'\','+i+',\'dosTiempos\')">✓ Deshacer</button>';
+      } else {
+        html+=workerSel(ta.workers,ta.dosTiempos,t,i,'dosTiempos');
+        html+='<button onclick="toggleParte(\''+t+'\','+i+',\'dosTiempos\')" style="flex-shrink:0;background:#16a34a;color:#fff;border:none;border-radius:20px;padding:5px 10px;font-size:12px;cursor:pointer;">✓</button>';
+      }
+      html+='</div>';
+      html+='</div>';
+    });
+
+    html+='<div class="add-tanda-btn" onclick="addTanda(\''+t+'\')">＋ Añadir tanda en tarima '+t+'</div>';
+    html+='</div>';
+  });
+
+  document.getElementById('directo-tarimas').innerHTML=html;
+  updateResumen();
+}
+
+// ---- EXPORTAR / IMPORTAR ----
+function exportarDatos(){
+  var datos = {
+    version: 1,
+    exportado: new Date().toISOString(),
+    cfg: cfg,
+    db: db,
+    active: { compId: activeCompId, jornadaId: activeJornadaId }
+  };
+  var json = JSON.stringify(datos, null, 2);
+  var blob = new Blob([json], { type: 'application/json' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  var fecha = new Date().toISOString().slice(0,10);
+  a.href = url;
+  a.download = 'turnos_halterofilia_' + fecha + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importarDatos(input){
+  var file = input.files[0];
+  if(!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e){
+    try {
+      var datos = JSON.parse(e.target.result);
+      if(!datos.cfg || !datos.db) throw new Error('Formato incorrecto');
+      cfg = datos.cfg;
+      db = datos.db;
+      activeCompId = datos.active ? datos.active.compId : null;
+      activeJornadaId = datos.active ? datos.active.jornadaId : null;
+      localStorage.setItem('hl_cfg', JSON.stringify(cfg));
+      localStorage.setItem('hl_db', JSON.stringify(db));
+      saveActive();
+      // actualizar campos de nombre
+      document.getElementById('name0').value = cfg.names[0];
+      document.getElementById('name1').value = cfg.names[1];
+      document.getElementById('name2').value = cfg.names[2];
+      updateTopbarSub();
+      var ok = document.getElementById('import-ok');
+      ok.style.display = 'block';
+      document.getElementById('import-err').style.display = 'none';
+      setTimeout(function(){ ok.style.display='none'; }, 3000);
+    } catch(err) {
+      document.getElementById('import-err').style.display = 'block';
+      document.getElementById('import-ok').style.display = 'none';
+      setTimeout(function(){ document.getElementById('import-err').style.display='none'; }, 3000);
+    }
+    input.value = '';
+  };
+  reader.readAsText(file);
+}
+
+function renderStats(){
+  var j = getActiveJornada();
+  var comp = getComp(activeCompId);
+  if(!j){
+    document.getElementById('stats-empty').style.display='block';
+    document.getElementById('stats-content').style.display='none';
+    return;
+  }
+  document.getElementById('stats-empty').style.display='none';
+  document.getElementById('stats-content').style.display='block';
+
+  if(comp) document.getElementById('stats-jornada-label').textContent = comp.nombre+' · '+comp.ciudad+' · '+formatFecha(j.fecha);
+
+  // -- JORNADA ACTUAL --
+  var counts = calcCounts(j);
+  var totalTandas = j.tandas.A.length + j.tandas.B.length;
+  var totalHecho = counts[0]+counts[1]+counts[2];
+  var progPct = totalTandas>0?(totalHecho/totalTandas*100):0;
+
+  var html='';
+  cfg.names.forEach(function(n,i){
+    var pct = totalTandas>0?(counts[i]/totalTandas*100):0;
+    var col = i===0?'#1e40af':i===1?'#166534':'#92400e';
+    html+='<div class="stat">';
+    html+='<div class="stat-name"><span class="worker-badge w'+i+'">'+(n||'P'+(i+1))+'</span></div>';
+    html+='<div class="stat-val" style="color:'+col+'">'+counts[i].toFixed(1)+'</div>';
+    html+='<div class="stat-pct">'+pct.toFixed(0)+'% de '+totalTandas+' tandas</div>';
+    html+='</div>';
+  });
+  document.getElementById('stats-grid').innerHTML=html;
+
+  var progressHtml = '<div class="card"><div style="font-size:12px;color:#888;margin-bottom:6px;">Progreso jornada: '+totalHecho.toFixed(1)+' / '+totalTandas+' tandas</div>'+
+    '<div class="progress-bar"><div class="progress-fill" style="width:'+progPct.toFixed(0)+'%"></div></div></div>';
+
+  // -- TOTAL COMPETICIÓN --
+  if(comp && comp.jornadas.length > 1){
+    var totalComp = [0,0,0];
+    var totalTandasComp = 0;
+    comp.jornadas.forEach(function(jj){
+      var c = calcCounts(jj);
+      totalComp[0]+=c[0]; totalComp[1]+=c[1]; totalComp[2]+=c[2];
+      totalTandasComp += jj.tandas.A.length + jj.tandas.B.length;
+    });
+    var totalHechoComp = totalComp[0]+totalComp[1]+totalComp[2];
+    var progPctComp = totalTandasComp>0?(totalHechoComp/totalTandasComp*100):0;
+
+    progressHtml += '<div class="section-title" style="margin-top:16px;">Total competición ('+comp.jornadas.length+' jornadas)</div>';
+    progressHtml += '<div class="stats-grid">';
+    cfg.names.forEach(function(n,i){
+      var pct = totalTandasComp>0?(totalComp[i]/totalTandasComp*100):0;
+      var col = i===0?'#1e40af':i===1?'#166534':'#92400e';
+      progressHtml+='<div class="stat">';
+      progressHtml+='<div class="stat-name"><span class="worker-badge w'+i+'">'+(n||'P'+(i+1))+'</span></div>';
+      progressHtml+='<div class="stat-val" style="color:'+col+'">'+totalComp[i].toFixed(1)+'</div>';
+      progressHtml+='<div class="stat-pct">'+pct.toFixed(0)+'% de '+totalTandasComp+' tandas</div>';
+      progressHtml+='</div>';
+    });
+    progressHtml+='</div>';
+    progressHtml+='<div class="card"><div style="font-size:12px;color:#888;margin-bottom:6px;">Progreso competición: '+totalHechoComp.toFixed(1)+' / '+totalTandasComp+' tandas</div>'+
+      '<div class="progress-bar"><div class="progress-fill" style="width:'+progPctComp.toFixed(0)+'%"></div></div></div>';
+  }
+
+  document.getElementById('stats-progress').innerHTML = progressHtml;
+}
+</script>
+</body>
+</html>
