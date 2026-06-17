@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Turnos VMix">
+<meta name="theme-color" content="#0a1f44">
+<link rel="manifest" href="manifest.json">
 <title>Turnos Halterofilia</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -746,6 +748,12 @@ function renderStats(){
   }
 
   document.getElementById('stats-progress').innerHTML = progressHtml;
+}
+<script>
+if('serviceWorker' in navigator){
+  window.addEventListener('load', function(){
+    navigator.serviceWorker.register('sw.js');
+  });
 }
 </script>
 </body>
